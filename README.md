@@ -23,6 +23,12 @@ That simple. This starts a proxy server listening on port 8880.
 * ARM-compatible
 * TSL/SSL HTTPS Support
 
+# Features
+* caching
+* cache Info
+* cache invalidation by tags
+* purge all: tag=all
+
 # Performace Measurement
 * Time of the response from the cache: 0.087ms 
 
