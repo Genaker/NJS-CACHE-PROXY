@@ -25,6 +25,7 @@ That simple. This starts a proxy server listening on port 8880.
 
 # Performace Measurement
 * Time of the response from the cache: 0.087ms 
+
 ![image](https://user-images.githubusercontent.com/9213670/151731280-9a6f8e8c-7d50-4a9a-92b5-da4629cc1adb.png)
 
 * Resonse time 100 parallel requests 16ms per request or 4697.47 req/sec:
