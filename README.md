@@ -1,7 +1,7 @@
 # NJS-CACHE-PROXY
 NodeJS replacement of the legacy Varnish Software
 
-# NJS-CACHE or Nodish - An alternative of Varnish Cache written on Node.JS
+# NJS-CACHE or Nodish - An alternative of the Varnish Cache written on Node.JS
 Magento 2 uses Varnish between the client and our backend server. It helps to support more concurrent accesses to our Magento website by caching in the and not hitting broken Magento PHP code every request. However, you need to use the domain-specific language "VCL" to define the cache policy. With node JS we can write Javascript code as a configuration and modules. NJS-CACHE is a pure Javascript (node.js) solution to replace legacy Varnish in your server.
 
 # Run the server
