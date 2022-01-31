@@ -6,8 +6,8 @@ Magento 2 uses Varnish between the client and our backend server. It helps to su
 
 # Run the server
 In my environment, I can start the server with this command.
-
-# sudo node server.js
+```npm install```
+```node server.js```
 That simple. This starts a proxy server listening on port 8880.
 
 # Node JS Performance and benefits vs Varnish CACHE 
