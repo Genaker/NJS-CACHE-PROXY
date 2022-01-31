@@ -62,7 +62,7 @@ const server = http.createServer([], async function (req, res) {
         let key = req.url; //.replace('&', '').replace('?','').replace('=',''); //Buffer.from(req.url).toString('base64');
         console.timeEnd('hash');
 
-        if (req.method === 'CACHE') {
+        if (req.method === 'PURGE') {
 
                 console.time('actions');
                 if (req.url === "/tagInfo") {
@@ -172,7 +172,7 @@ const server = http.createServer([], async function (req, res) {
                         // Requests can be made by passing the relevant config to 
                         response = await fetch(config.host + req.url, {
                                 method: req.method,
-                                data: req.data
+                                body: req.body
                         });
                 } catch (error) {
                         console.log(colors.bg.red, "Error", colors.reset);
