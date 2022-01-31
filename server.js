@@ -1,4 +1,3 @@
-  const fastify = require('fastify')({ logger: false })
 const http = require('http');
 const https = require('https');
 const sharp = require('sharp');
@@ -11,8 +10,8 @@ const qs = require('qs');
 const hash = require('crypto').createHash;
 
 const config = {
-host: 'https://react-luma.merche.io/',
-replace: {find: "https://react-luma.merche.io", replase:"http://127.0.0.1:8880" }
+    host: 'https://react-luma.merche.io/',
+    replace: { find: "https://react-luma.merche.io", replase: "http://127.0.0.1:8880" }
 }
 
 
@@ -24,7 +23,7 @@ const colors = {
     blink: "\x1b[5m",
     reverse: "\x1b[7m",
     hidden: "\x1b[8m",
-    
+
     fg: {
         black: "\x1b[30m",
         red: "\x1b[31m",
@@ -55,131 +54,130 @@ let tagStorage = {};
 
 const server = http.createServer([], async function (req, res) {
 
-console.log(colors.fg.green, req.url, colors.reset);
-console.log(colors.fg.magenta, req.method, colors.reset);
+    console.log(colors.fg.green, req.url, colors.reset);
+    console.log(colors.fg.magenta, req.method, colors.reset);
 
-console.time('request');
+    console.time('request');
 
-console.time('hash');
-let key = req.url; //.replace('&', '').replace('?','').replace('=',''); //Buffer.from(req.url).toString('base64');
-console.timeEnd('hash');
+    console.time('hash');
+    let key = req.url; //.replace('&', '').replace('?','').replace('=',''); //Buffer.from(req.url).toString('base64');
+    console.timeEnd('hash');
 
-if (req.method === 'CACHE'){
+    if (req.method === 'CACHE') {
 
-console.time('actions');
-if (req.url === "/tagInfo") {
-  	res.write(JSON.stringify({'tags':tagStorage, 'count':tagStorage.length}));
-	res.end(); 
-	return;
-}
+        console.time('actions');
+        if (req.url === "/tagInfo") {
+            res.write(JSON.stringify({ 'tags': tagStorage, 'count': tagStorage.length }));
+            res.end();
+            return;
+        }
 
-if (req.url.substring(0,7) === "/tagClear".substring(0,7)) {
-	console.time('delete TAGS');
-	const queryParams = URL.parse(req.url, true).query;
-        const tags = queryParams['tags'].split(',');
+        if (req.url.substring(0, 7) === "/tagClear".substring(0, 7)) {
+            console.time('delete TAGS');
+            const queryParams = URL.parse(req.url, true).query;
+            const tags = queryParams['tags'].split(',');
 
-	if (tags.length === 1 && tags[0].toLowerCase() === "all"){
-		cacheStorage = [];
-		tagStorage = {};
-	} else {
-		for (const tag of tags) {
-			console.log("tag " + tag + " deleted");
-			for (const pageKey in tagStorage[tag]){
-				//delete page form the cache
-				delete cacheStorage[pageKey];
-				//delete tagStorage[tag][pageKey];
-			}
-			tagStorage[tag] = {};
-		} 
-	}
-	console.timeEnd('delete TAGS');
-        res.write(`Tags ${tags.join(',')} cleared`);
+            if (tags.length === 1 && tags[0].toLowerCase() === "all") {
+                cacheStorage = [];
+                tagStorage = {};
+            } else {
+                for (const tag of tags) {
+                    console.log("tag " + tag + " deleted");
+                    for (const pageKey in tagStorage[tag]) {
+                        //delete page form the cache
+                        delete cacheStorage[pageKey];
+                        //delete tagStorage[tag][pageKey];
+                    }
+                    tagStorage[tag] = {};
+                }
+            }
+            console.timeEnd('delete TAGS');
+            res.write(`Tags ${tags.join(',')} cleared`);
+            res.end();
+            return;
+        }
+        console.timeEnd('actions')
+    }
+
+    // caching only  GET requests
+    if (req.method === 'GET') {
+        console.time('typeof')
+        // check if in cache
+        if (cacheStorage[key] !== undefined) {
+            console.log("From Cache");
+            console.timeEnd('typeof')
+            //console.log(cacheStorage[key].headers);
+            cacheStorage[key].headers['NJS-CACHE'] = 'HIT';
+            res.writeHeader(cacheStorage[key].status, cacheStorage[key].headers)
+            res.write(cacheStorage[key].body);
+            res.end(); ///header('Content-Type', 'text/html; charset=utf-8').send(cacheStorage[key]);
+            console.timeEnd('request');
+            return
+        }
+
+        let response = '';
+
+        try {
+            // aotix https://masteringjs.io/tutorials/axios/response-body
+            response = await axios(config.host + req.url, { responseType: 'arraybuffer' });
+        } catch (error) {
+            console.log(colors.bg.red, "Error", colors.reset);
+            console.log(error);
+            if (error.response) response = error.response;
+        }
+        console.log("fetched from the origin");
+        //console.log(response);
+        //let response = await fetch('https://react-luma.merche.io/');
+        cacheStorage[key] = { 'body': response.data, 'status': response.status, 'headers': response.headers, 'created_at': Date.now(), 'ttl': 3600, 'tags': [] };
+
+        let tags = ['test', 'test2', 'test4', 'test5', 'test6', 'test7', 'test8', 'test9'];
+
+        console.time("tag processing");
+        /*if (cacheStorage['all'] === undefined){
+        tagStorage['all'] = {};
+        }
+        tagStorage['all'][key] = 1;*/
+
+        if (tags.length > 0)
+            for (const tag of tags) {
+                if (tagStorage[tag] === undefined) {
+                    tagStorage[tag] = {}
+                }
+                tagStorage[tag][key] = 1;
+            }
+        console.timeEnd("tag processing");
+        // console.log(response);
+        //res.setHeader('NodeTime', "test");
+        res.write(response.data);
         res.end();
-        return;
-}
-console.timeEnd('actions')
-}
-
-
-// caching only  GET request 
-if (req.method === 'GET') {
-console.time('typeof')
- // check if in cache
- if( cacheStorage[key] !== undefined){
-	console.log("From Cache");
-	console.timeEnd('typeof')
-        //console.log(cacheStorage[key].headers);
-	cacheStorage[key].headers['NJS-CACHE'] = 'HIT';
-	res.writeHeader(cacheStorage[key].status, cacheStorage[key].headers)
-	res.write(cacheStorage[key].body);
-        res.end(); ///header('Content-Type', 'text/html; charset=utf-8').send(cacheStorage[key]);
-	console.timeEnd('request');
         return
-  }
+        // IF not GET request
+    } else {
 
-  let response  = '';
+        let response = '';
 
-  try{
-  // aotix https://masteringjs.io/tutorials/axios/response-body
-  response = await axios(config.host + req.url, {responseType: 'arraybuffer'});
-  } catch (error){
-  	console.log(colors.bg.red, "Error", colors.reset);
-  	console.log(error);
-  	if(error.response) response = error.response;
-  }
-  console.log("fetched from the origin");
-  //console.log(response);
-  //let response = await fetch('https://react-luma.merche.io/');
-  cacheStorage[key] = {'body': response.data,'status':response.status, 'headers': response.headers, 'created_at': Date.now(), 'ttl': 3600, 'tags':[]};
+        try {
+            // aotix https://masteringjs.io/tutorials/axios/response-body
+            // Requests can be made by passing the relevant config to 
+            response = await axios({
+                method: req.method,
+                url: config.host + req.url,
+                data: req.data
+            });
+        } catch (error) {
+            console.log(colors.bg.red, "Error", colors.reset);
+            console.log(error);
+            if (error.response) response = error.response;
+        }
 
-  let tags = ['test','test2', 'test4', 'test5', 'test6', 'test7', 'test8', 'test9'];
-
-  console.time("tag processing");
-  /*if (cacheStorage['all'] === undefined){
-  tagStorage['all'] = {};
-  }
-  tagStorage['all'][key] = 1;*/
-
-  if (tags.length > 0)
-  for (const tag of tags){
-     if(tagStorage[tag] === undefined) {
-	tagStorage[tag] = {}
-     }
-     tagStorage[tag][key] = 1;
-  }
-  console.timeEnd("tag processing");
- // console.log(response);
-  //res.setHeader('NodeTime', "test");
-  res.write(response.data);
-  res.end();
-  return
-// IF not GET request
-} else {
-
-let response = '';
-
-  try {
-  	// aotix https://masteringjs.io/tutorials/axios/response-body
-	// Requests can be made by passing the relevant config to 
-	response = await axios({
-  		method: req.method,
-  		url: config.host + req.url,
-  		data:  req.data
-	});
-  } catch (error){
-        console.log(colors.bg.red, "Error", colors.reset);
-        console.log(error);
-        if(error.response) response = error.response;
-  }
-
-  res.write(response.data);
-  res.end();
-  return
-}
+        res.write(response.data);
+        res.end();
+        return
+    }
 
 }).listen(8880);
 
-server.on("error", err=>console.log(err));
+server.on("error", err => console.log(err));
 
-const {address, port} = server.address();
-console.log(colors.fg.yellow,`Server running at http://${address}:${port}`, colors.reset);
+const { address, port } = server.address();
+console.log(colors.fg.yellow, `Server running at http://${address}:${port}`, colors.reset);
